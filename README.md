@@ -2,65 +2,70 @@
 
 Find your people. Study better. Succeed together.
 
-Buddy Finder is a student-focused platform for university and college students to discover compatible study partners at their institution, connect through study requests, and organise study sessions.
+Buddy Finder helps university and college students find compatible study partners at their institution, send study requests, and organise study sessions. It is a focused academic tool—not a social feed or chat app.
 
-## The problem
+## MVP features
 
-Students often want to study with classmates, prepare for exams together, or get help with specific modules—but may not know who else studies the same subjects or is available.
-
-## The solution
-
-Buddy Finder helps students find peers based on their institution, course, year of study, modules, study preferences, and availability. It is designed as a focused academic tool, not another social media feed.
-
-## How it works
-
-1. Sign up with Firebase Authentication and create a student profile.
-2. Add institution, course, year, modules, study style, and availability.
-3. Discover students at the same institution, with filters for modules or subjects.
-4. Review compatibility rankings based on shared modules and preferences.
-5. Send a study request; the recipient can accept or decline.
-6. Once connected, arrange a study session by creating or joining one.
-
-## MVP scope
-
-- Student profiles
-- Discover and filter students by module or subject
-- Compatibility-based matching
-- Study requests and connections
-- Create and join study sessions
+- Student profiles with institution, course, year, modules, study style, and availability
+- Campus-scoped discovery, module search, and compatibility ranking
+- Study requests and study sessions
 - Privacy controls, blocking, and reporting
-
-The initial release is focused on one institution to build a useful student community before expanding. It will not include a public feed or built-in chat.
 
 ## Technology
 
-- Flutter mobile app
-- Firebase Authentication for accounts
-- Cloud Firestore for student profiles, matching data, requests, and study sessions
+- Current repository UI: responsive web prototype (plain HTML, CSS, and JavaScript)
+- Product target: Flutter mobile app
+- Authentication and database target: Supabase Auth + Supabase Postgres
+- Access control: PostgreSQL Row Level Security (RLS)
 
-## Product principles
+The UI currently uses demonstration profiles and does not yet connect to Supabase. The migration below defines the initial database and RLS policies; it does not configure a hosted project or supply credentials.
 
-- Keep the experience focused on studying and finding compatible peers.
-- Give students control over what profile information they share.
-- Make blocking and reporting accessible.
-- Avoid collecting or exposing unnecessary personal data.
-- Build a strong community at one institution before expanding.
+## Supabase schema
 
-## Suggested core data
+The migration at `supabase/migrations/20261029000000_initial_schema.sql` creates:
 
-These are logical MVP entities; the concrete Firestore schema and security rules should be designed before connecting a production Firebase project.
+- `profiles`: public student profile fields; no email or private account data
+- `study_requests`: request sender, recipient, status, and timestamps
+- `study_sessions` and `session_participants`: study session details and membership
+- `user_blocks` and `user_reports`: safety controls and reporting
 
-- `users`: account identity and student profile fields
-- `studyRequests`: sender, recipient, status, and timestamps
-- `connections`: accepted study-partner relationships
-- `studySessions`: creator, participants, module, time, and meeting details
-- `userBlocks` / `userReports`: privacy and safety actions
+RLS is enabled on every table. Profile discovery and session access are limited to the signed-in student's institution; requests and safety records are limited by participant/owner. The authenticated client must use the Supabase project URL and anon/publishable key only. Never put the service-role key in client code or commit it to this repository.
 
-Firestore Security Rules must ensure that users can only read and update permitted records, and that private profile fields are not exposed to unrelated students.
+## Local setup
 
-## Getting started
+Requirements: Node.js 20+ and the Supabase CLI. Start the demo UI:
 
-The repository is currently at the product-definition stage. Flutter app scaffolding, Firebase project configuration, Firestore schema, and Security Rules still need to be added. Never commit Firebase service-account credentials or other secrets.
+```sh
+npm start
+```
+
+Then open `http://localhost:4173`.
+
+To run the Supabase database locally (Docker required):
+
+```sh
+supabase init   # only if this repository does not already have supabase/config.toml
+supabase start
+supabase db reset
+```
+
+`supabase db reset` applies the migration to the local database. For a hosted project, link the project and explicitly push migrations:
+
+```sh
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
+supabase db push
+```
+
+Set the project URL and anon/publishable key in the future app's local environment configuration; those values are intentionally not committed here. Do not use a service-role key in the client. No hosted project is currently configured.
+
+## Checks
+
+```sh
+npm test
+```
+
+The web demo's profiles, filters, and request interactions are local mock data. Supabase Auth, live profile discovery, persisted requests, and session workflows still need to be wired into the app before it is a hosted product.
 
 ## Vision
 
